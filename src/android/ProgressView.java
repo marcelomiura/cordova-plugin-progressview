@@ -10,6 +10,7 @@
 package de.neofonie.cordova.plugin.progressview;
 
 import android.app.ProgressDialog;
+import android.util.Log;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
@@ -18,10 +19,29 @@ import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
 
+class ProgressViewData {
+
+     public String message;
+     public Integer theme;
+     public int shape;
+     public boolean indeterminate;
+
+     public ProgressViewData() {
+
+        this.message = null;
+        this.theme = 5; // ProgressDialog.THEME_DEVICE_DEFAULT_LIGHT;
+        this.shape = ProgressDialog.STYLE_HORIZONTAL;
+        this.indeterminate = false;
+     }   
+}
+
 public class ProgressView extends CordovaPlugin {
 
-    //private static String LOG_TAG = "CordovaLog";
+    private static String LOG_TAG = "ProgressView";
     private static ProgressDialog progressViewObj = null;
+
+    private String lastMessage = "";
+    private Integer lastTheme = null;
     private CallbackContext callback = null;
 
     /**
@@ -34,6 +54,9 @@ public class ProgressView extends CordovaPlugin {
      */
     @Override
     public boolean execute(String action, String args, CallbackContext callbackContext) {
+
+        Log.d(LOG_TAG, "executing a action..." + action);
+
         /*
          * Don't run any of these if the current activity is finishing in order
          * to avoid android.view.WindowManager$BadTokenException crashing the app.
@@ -49,6 +72,8 @@ public class ProgressView extends CordovaPlugin {
             this.setProgress(args);
         } else if (action.equals("setLabel")) {
             this.setLabel(args);
+        } else if (action.equals("update")) {
+            this.update(args);
         } else if (action.equals("hide")) {
             this.hide();
         }
@@ -60,7 +85,7 @@ public class ProgressView extends CordovaPlugin {
      * Show Dialog
      */
     private void show(final String args) {
-        //Log.v(LOG_TAG, rawArgs);
+        Log.d(LOG_TAG, args);
         final CordovaInterface cordova = this.cordova;
         Runnable runnable = new Runnable() {
             @Override
@@ -74,80 +99,12 @@ public class ProgressView extends CordovaPlugin {
                     return;
                 }
 
-                // Get Arguments
-                JSONArray argsObj = null;
-                try {
-                    argsObj = new JSONArray(args);
-                } catch (JSONException e) {
-                    // e.printStackTrace();
-                }
+                ProgressViewData currentData = parseData(args);
 
-                // Reset
-                ProgressView.progressViewObj = null;
+                lastTheme = currentData.theme;
+                lastMessage = currentData.message;
 
-                // Set Label
-                String label = " ";
-                try {
-                    if(argsObj.getString(0) != null && !argsObj.getString(0).isEmpty()){
-                        try {
-                            label = argsObj.getString(0);
-                        } catch (JSONException e) {
-                            // e.printStackTrace();
-                        }
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-
-                // Set Shape, Type
-                int shape = ProgressDialog.STYLE_HORIZONTAL;
-                try {
-                    if (argsObj.get(1) != null) {
-                        try {
-                            if ("CIRCLE".equals(argsObj.getString(1))) {
-                                shape = ProgressDialog.STYLE_SPINNER;
-                            }
-                        } catch (JSONException e) {
-                            // e.printStackTrace();
-                        }
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-
-                // Set Android Theme
-                Integer theme = 5; // ProgressDialog.THEME_DEVICE_DEFAULT_LIGHT
-                try {
-                    if (argsObj.get(3) != null) {
-                        String themeArg = null;
-                        try {
-                            themeArg = argsObj.getString(3);
-                        } catch (JSONException e) {
-                            // e.printStackTrace();
-                        }
-                        if ("TRADITIONAL".equals(themeArg)) {
-                            theme = 1; // ProgressDialog.THEME_TRADITIONAL
-                        } else if ("DEVICE_DARK".equals(themeArg)) {
-                            theme = 4; // ProgressDialog.THEME_DEVICE_DEFAULT_DARK
-                        }
-                        if ("HOLO_DARK".equals(themeArg)) {
-                            theme = 2; // ProgressDialog.THEME_HOLO_DARK
-                        }
-                        if ("HOLO_LIGHT".equals(themeArg)) {
-                            theme = 3; // ProgressDialog.THEME_HOLO_LIGHT
-                        }
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-
-                // Show
-                ProgressView.progressViewObj = new ProgressDialog(cordova.getActivity(), theme);
-                ProgressView.progressViewObj.setProgressStyle(shape);
-                ProgressView.progressViewObj.setTitle("");
-                ProgressView.progressViewObj.setMessage(label.replaceAll("^\"|\"$", ""));
-                ProgressView.progressViewObj.setCancelable(false);
-                ProgressView.progressViewObj.setCanceledOnTouchOutside(false);
+                ProgressView.progressViewObj = getProgressDialog(currentData);
                 ProgressView.progressViewObj.show();
 
                 // Callback
@@ -211,6 +168,139 @@ public class ProgressView extends CordovaPlugin {
     }
     
     
+
+    /**
+     * Set Progress
+     */
+    private void update(final String args) {
+        Log.d(LOG_TAG, "shape here===============" + args);
+
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+
+                // Check State
+                if (ProgressView.progressViewObj == null) {
+                    PluginResult result = new PluginResult(PluginResult.Status.ERROR, "(Cordova ProgressView) (setProgress) ERROR: No dialog to update");
+                    result.setKeepCallback(true);
+                    callback.sendPluginResult(result);
+                    return;
+                }
+
+                ProgressViewData currentData = parseData(args);
+
+                Log.d(LOG_TAG, "shape here again===============" + Integer.toString(currentData.shape));
+
+                if (currentData.message == null) {
+                    currentData.message = lastMessage;
+                }
+
+                ProgressDialog newProgress = getProgressDialog(currentData);
+                newProgress.show();                
+
+                Log.d(LOG_TAG, "shape setted==================");
+
+                ProgressView.progressViewObj.dismiss();
+                ProgressView.progressViewObj = newProgress;
+
+                // Callback
+                PluginResult result = new PluginResult(PluginResult.Status.OK, "(Cordova ProgressView) (setShape) OK");
+                result.setKeepCallback(true);
+                callback.sendPluginResult(result);
+            }
+        };
+        this.cordova.getActivity().runOnUiThread(runnable);
+    }
+
+    private ProgressViewData parseData(String args) {
+
+        // Get Arguments
+        JSONArray argsObj = null;
+        try {
+            argsObj = new JSONArray(args);
+        } catch (JSONException e) {
+            // e.printStackTrace();
+        }
+
+        ProgressViewData currentData = new ProgressViewData();
+
+        try {
+            if(argsObj.getString(0) != null && !argsObj.getString(0).isEmpty()){
+                try {
+                    currentData.message = argsObj.getString(0).replaceAll("^\"|\"$", "");
+                } catch (JSONException e) {
+                    // e.printStackTrace();
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            if (argsObj.get(1) != null) {
+                try {
+                    if ("CIRCLE".equals(argsObj.getString(1))) {
+                        currentData.shape = ProgressDialog.STYLE_SPINNER;
+                    }
+                } catch (JSONException e) {
+                    // e.printStackTrace();
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            if (argsObj.get(2) != null) {
+                try {
+                    currentData.indeterminate = argsObj.getBoolean(2);
+                } catch (JSONException e) {
+                    // e.printStackTrace();
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }                
+
+        try {
+            if (argsObj.get(3) != null) {
+                String themeArg = null;
+                try {
+                    themeArg = argsObj.getString(3);
+                } catch (JSONException e) {
+                    // e.printStackTrace();
+                }
+                if ("TRADITIONAL".equals(themeArg)) {
+                    currentData.theme = 1; // ProgressDialog.THEME_TRADITIONAL
+                } else if ("DEVICE_DARK".equals(themeArg)) {
+                    currentData.theme = 4; // ProgressDialog.THEME_DEVICE_DEFAULT_DARK
+                }
+                if ("HOLO_DARK".equals(themeArg)) {
+                    currentData.theme = 2; // ProgressDialog.THEME_HOLO_DARK
+                }
+                if ("HOLO_LIGHT".equals(themeArg)) {
+                    currentData.theme = 3; // ProgressDialog.THEME_HOLO_LIGHT
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return currentData;
+    }
+    
+    private ProgressDialog getProgressDialog(ProgressViewData currentData) {
+
+        ProgressDialog progress = new ProgressDialog(cordova.getActivity(), currentData.theme);
+        progress.setProgressStyle(currentData.shape);
+        progress.setTitle("");
+        progress.setMessage(currentData.message);
+        progress.setCancelable(false);
+        progress.setCanceledOnTouchOutside(false);
+
+        return progress;
+    }
+
     
     /**
      * Set Label

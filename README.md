@@ -51,19 +51,20 @@ cordova plugin add https://github.com/SidneyS/cordova-plugin-progressview.git
 ### show()
 
 ```javascript
-ProgressView.show: function (progressLabel, progressType, progressTheme)
+window.plugins.ProgressView.show: function (viewLabel, viewShape, isIndeterminate, themeAndroid, successCallback, errorCallback)
 ```
 Shows a progress dialog.
 
 * params
- * progressLabel - Text description of current operation.
- * progressType - Type of dialog -  "CIRCLE" (Default), "HORIZONTAL"
- * progressTheme - Visual Theme (Android only) - "DEVICE_LIGHT" (Default), "TRADITIONAL", "DEVICE_DARK", "HOLO_DARK", "HOLO_LIGHT"
+     viewLabel - Dialog Title, defaults to 'Please Wait...'
+     viewShape - "CIRCLE", "BAR"
+     isIndeterminate - True / False
+    themeAndroid -  (Android only) "TRADITIONAL", "DEVICE_DARK", "DEVICE_LIGHT", "HOLO_DARK", "HOLO_LIGHT"
 
 ### setProgress()
 
 ```javascript
-ProgressView.setProgress: function (progressPercentage)
+window.plugins.ProgressView.setProgress: function (progressPercentage)
 ```
 Updates displayed progress dialog percentage.
 
@@ -73,9 +74,21 @@ Updates displayed progress dialog percentage.
 ### hide()
  
 ```javascript
-ProgressView.hide: function ()
+window.plugins.ProgressView.hide: function ()
  ```
 Hides progress dialog.
 
+
+### setShape() Android only
+ 
+```javascript
+window.plugins.ProgressView.setShape: function (viewShape)
+ ```
+Change the progress style
+
  * params
-  * progressPercentage - Floating point value (0.1 - 1.0), representing the percentage to be displayed.
+    viewShape - "CIRCLE", "BAR"
+
+
+ LOGCAT DEBUGS
+ 	to see logs in locat, use: adb logcat ProgressView:D *:S

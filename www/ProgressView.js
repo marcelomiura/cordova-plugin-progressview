@@ -59,6 +59,39 @@ module.exports = {
 
        return exec(successCallback, errorCallback, 'ProgressView', 'setLabel', [label]);
    },
+   
+
+   /**
+    * Updates loading style
+    *
+    * @param {String} viewShape - "CIRCLE", "BAR"
+    * @param successCallback
+    * @param errorCallback
+    * @returns {*}
+    */
+   update: function (viewLabel, viewShape, isIndeterminate, themeAndroid, successCallback, errorCallback) {
+        label = viewLabel || "Please Wait...";
+        shape =  viewShape || "CIRCLE";
+        indeterminate = isIndeterminate || false;
+        theme = themeAndroid || "DEVICE_LIGHT";
+
+        return exec(successCallback, errorCallback, 'ProgressView', 'update', [label, shape, indeterminate, theme]);
+   },
+   
+
+   /**
+    * Updates loading style
+    *
+    * @param {String} viewShape - "CIRCLE", "BAR"
+    * @param successCallback
+    * @param errorCallback
+    * @returns {*}
+    */
+   setShape: function (viewShape, successCallback, errorCallback) {
+        shape =  viewShape || "CIRCLE";
+
+        return exec(successCallback, errorCallback, 'ProgressView', 'update', ["", shape, undefined, undefined]);
+   },
 
 
     /**
