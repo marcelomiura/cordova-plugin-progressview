@@ -344,7 +344,8 @@ public class ProgressView extends CordovaPlugin {
                 }
 
                 // Update Label
-                ProgressView.progressViewObj.setMessage(label.replaceAll("^\"|\"$", ""));
+                lastMessage = label.replaceAll("^\"|\"$", "");
+                ProgressView.progressViewObj.setMessage(lastMessage);
 
                 // Callback
                 PluginResult result = new PluginResult(PluginResult.Status.OK, "(Cordova ProgressView) (setLabel) OK");
