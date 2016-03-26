@@ -8,7 +8,7 @@
  ****************************************/
 
 #import <Cordova/CDV.h>
-#import <M13Progress/M13Progress.h>
+#import "MBProgressHUD.h"
 #import "ProgressView.h"
 #import "AppDelegate.h"
 
@@ -56,8 +56,6 @@ static const double _PROGRESSVIEW_UPDATE_INTERVAL = 1.5;
     NSString* shape = [command.arguments objectAtIndex:1];
     BOOL isIndeterminate = [[command.arguments objectAtIndex:2] boolValue];
 
-    // [self.commandDelegate runInBackground:^{
-
     // Set Style
     [self showView:label isIndeterminate:isIndeterminate isShape:shape isVisible:YES];
 
@@ -69,6 +67,36 @@ static const double _PROGRESSVIEW_UPDATE_INTERVAL = 1.5;
     //}];
 };
 
+
+-(void)update:(CDVInvokedUrlCommand *)command {
+
+    if (!_progressView) {
+        CDVPluginResult* pluginResult;
+        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"(Cordova ProgressView) (Show) OK"];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];        
+        return;
+    }
+
+    // Get Arguments
+    NSString* label = [command.arguments objectAtIndex:0];
+    NSString* shape = [command.arguments objectAtIndex:1];
+
+    if ([label length] == 0) {
+        label = _progressView.labelText;
+    }
+
+    [self removeView];
+
+    // Set Style
+    [self showView:label isIndeterminate:NO isShape:shape isVisible:YES];
+
+    // Callback
+    CDVPluginResult* pluginResult;
+    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"(Cordova ProgressView) (Show) OK"];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+
+    //}];
+};
 
 /**
  *  Set Progress
@@ -120,9 +148,7 @@ static const double _PROGRESSVIEW_UPDATE_INTERVAL = 1.5;
     // Init
     CDVPluginResult* pluginResult;
 
-    [self performSelector:@selector(removeView)
-               withObject:nil
-               afterDelay:_PROGRESSVIEW_UPDATE_INTERVAL];
+    [self removeView];
 
     // Callback
     pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"(Cordova ProgressView) (Hide) OK"];
@@ -139,14 +165,14 @@ static const double _PROGRESSVIEW_UPDATE_INTERVAL = 1.5;
 - (void)updateProgress:(CGFloat)progress
 {
 
-    [_progressView setProgress:progress animated:YES];
+    _progressView.progress = progress;
 };
 
 
 - (void)updateLabel:(NSString *)viewLabel
 {
 
-    _progressView.status = viewLabel;
+    _progressView.labelText = viewLabel;
 };
 
 
@@ -154,24 +180,21 @@ static const double _PROGRESSVIEW_UPDATE_INTERVAL = 1.5;
 {
 
     if ([shape isEqualToString:_PROGRESSVIEW_STYLE_HORIZONTAL]){
-
-    _progressView = [[M13ProgressHUD alloc] initAndShowWithProgressView:[[M13ProgressViewBar alloc] init] progress:_progressDefault indeterminate:isIndeterminate status:viewLabel mask:M13ProgressHUDMaskTypeGradient inView:self.webView];
-        _progressView.statusPosition = M13ProgressViewBarPercentagePositionTop;
+        _progressView = [MBProgressHUD showHUDAddedTo:self.webView.superview animated:YES];
+        _progressView.mode = MBProgressHUDModeDeterminateHorizontalBar;
     } else {
-        _progressView = [[M13ProgressHUD alloc] initAndShowWithProgressView:[[M13ProgressViewRing alloc] init] progress:_progressDefault indeterminate:isIndeterminate status:viewLabel mask:M13ProgressHUDMaskTypeGradient inView:self.webView];
-        _progressView.statusPosition = M13ProgressHUDStatusPositionBelowProgress;
+        _progressView = [MBProgressHUD showHUDAddedTo:self.webView.superview animated:YES];
+        _progressView.mode = MBProgressHUDModeIndeterminate;
     }
 
-    _progressView.progressViewSize = CGSizeMake(250.0, 250.0);
-    _progressView.animationPoint = CGPointMake(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
-
-
+    _progressView.labelText = viewLabel;
 };
 
 
 - (void)removeView
 {
-    [_progressView dismiss:YES];
+    [_progressView hide:YES];
+    _progressView = nil;
 };
 
 
