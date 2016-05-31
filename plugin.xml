@@ -15,7 +15,7 @@
         <engine name="cordova" version=">=3.5"/>
     </engines>
 
-    <js-module src="www/progressview.js" name="progressview">
+    <js-module src="www/ProgressView.js" name="progressview">
         <clobbers target="window.plugins.ProgressView"/>
     </js-module>
 
